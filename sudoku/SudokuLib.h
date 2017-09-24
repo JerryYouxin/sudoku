@@ -406,6 +406,7 @@ void Sudoku::solve() {
 				int v;
 				for(v=trying_value[k];v<9;++v) {
 					if(!(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2])) {
+						//printf("%d: %d ==> %d %d\n",k,v+1,r,c);
 						trying_value[k] = v+1;
 						cdata[k] = v+1;
 						empty_value[v][r][0] = true;
@@ -415,6 +416,7 @@ void Sudoku::solve() {
 					}
 				}
 				if(v>=9) {
+					trying_value[k] = 0;
 					--k;
 					int tr = k/9;
 					int tc = k%9;
@@ -422,11 +424,13 @@ void Sudoku::solve() {
 					empty_value[cdata[k]-1][tr][0] = false;
 					empty_value[cdata[k]-1][tc][1] = false;
 					empty_value[cdata[k]-1][tb][2] = false;
+					//printf("Not found. Reset to %d\n",k);
 				}
 				else {
 					++k;
 				}
 			}
+			else ++k;
 		}
 
 	}
