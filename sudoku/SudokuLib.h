@@ -380,10 +380,12 @@ void Sudoku::solve() {
 	//#pragma omp parallel
 	for(int n=0;n<N;++n) {
 		printf("Solving %d...\n",n);
-		bool fill[81] ={ 0 }; // log if i-th grid should be filled in
+		int fill[82]; // log if i-th grid should be filled in
+		memset(fill,-1,sizeof(int)*82);
 		bool empty_value[9][9][3]={ 0 }; // (value, r/c/b number, row/col/block)
 		short trying_value[81] ={ 0 };
 		short *cdata = this->data + n*81;
+		int ik=0;
 		for(int i=0;i<81;++i) {
 			int r = i/9;
 			int c = i%9;
@@ -394,12 +396,17 @@ void Sudoku::solve() {
 				empty_value[v][c][1] = true;
 				empty_value[v][b][2] = true;
 			}
-			else fill[i] = true;	
+			else {
+				fill[ik] = i;
+				++ik;
+			}
 		}
 		// begin search
 		int k=0;
-		while(k<81) {
-			if(fill[k]) {
+		int last=0;
+		ik = 0;
+		while((k=fill[ik])>=0) {
+			//printf("Now searching value for %d(%d)\n",k,ik);
 				int r = k/9;
 				int c = k%9;
 				int b = 3*(r/3) + (c/3);
@@ -417,20 +424,18 @@ void Sudoku::solve() {
 				}
 				if(v>=9) {
 					trying_value[k] = 0;
-					--k;
-					int tr = k/9;
-					int tc = k%9;
+					--ik;
+					int tr = fill[ik]/9;
+					int tc = fill[ik]%9;
 					int tb = 3*(tr/3)+(tc/3);
-					empty_value[cdata[k]-1][tr][0] = false;
-					empty_value[cdata[k]-1][tc][1] = false;
-					empty_value[cdata[k]-1][tb][2] = false;
-					//printf("Not found. Reset to %d\n",k);
+					empty_value[cdata[fill[ik]]-1][tr][0] = false;
+					empty_value[cdata[fill[ik]]-1][tc][1] = false;
+					empty_value[cdata[fill[ik]]-1][tb][2] = false;
+					//printf("%d: Not found. Reset to %d\n",k,fill[ik]);
 				}
 				else {
-					++k;
+					++ik;
 				}
-			}
-			else ++k;
 		}
 
 	}
