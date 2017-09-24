@@ -19,14 +19,10 @@ int string2int(char* str,int *value) {
 	return 0;
 }
 
-int parse(int argc,char* argv[],int* N,char* path) {
+int parse(int argc,char* argv[],int* N,char** path) {
 	bool parsed[26]={ 0 };
 	for(int i=1;i<argc;++i) {
 		if(strcmp(argv[i],"-c")==0) {
-			/*if(parsed['c']) {
-				printf("Error: %d argument -c already parsed\n.",i);
-				return -4;
-			}*/
 			++i;
 			if(i>=argc) {
 				printf("Error: no input for argument -s\n");
@@ -38,20 +34,15 @@ int parse(int argc,char* argv[],int* N,char* path) {
 				return -2;
 			}
 			printf("N = %d\n",*N);
-			parsed['c'] = true;
 		}
 		else if(strcmp(argv[i],"-s")==0) {
-			if(parsed['s']) {
-				printf("Error: argument -s already parsed\n.");
-				return -4;
-			}
 			++i;
 			if(i>=argc) {
 				printf("Error: no input for argument -s\n");
 				return -1;
 			}
-			path = argv[i];
-			parsed['s'] = true;
+			*path = argv[i];
+			printf("path = %s\n",*path);
 		}
 		else {
 			printf("Error: unknown argument: %s\n",argv[i]);
@@ -65,7 +56,7 @@ int main(int argc,char* argv[])
 {
 	int N=0;
 	char* path=NULL;
-	parse(argc,argv,&N,path);
+	parse(argc,argv,&N,&path);
 	Sudoku *sudoku;
 	//N = 1000000;
 	if(N>0) {
@@ -76,7 +67,10 @@ int main(int argc,char* argv[])
 		delete sudoku;
 	}
 	else if(path!=NULL) {
-		//sudoku = new Sudoku(path);
+		sudoku = new Sudoku(path);
+		sudoku->solve();
+		sudoku->print();
+		delete sudoku;
 	}
 	return 0;
 }

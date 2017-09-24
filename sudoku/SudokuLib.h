@@ -6,10 +6,11 @@ class Sudoku
 {
 	public:
 	Sudoku(int N);
+	Sudoku(char* filename);
 	~Sudoku();
 
 	void generate();
-	Sudoku* solve();
+	void solve();
 	inline short* mutable_cpu_data() { return data; }
 	inline int getSize() { return N; }
 	bool check();
@@ -19,6 +20,42 @@ class Sudoku
 	short *data;
 	int N;
 };
+
+Sudoku::Sudoku(char* filename) {
+	int n=0;
+	FILE *fp;
+	fopen_s(&fp,filename,"r");
+	this->data = new short[81000000];
+	short* cdata = this->data;
+	printf("reading file %s...\n",filename);
+	while(1) {
+		int r;
+		for(int i=0;i<81;++i) {
+			char x;
+			r = fscanf_s(fp,"%c",&x);
+			if(r<=0) break;
+			while(x<'0' || x>'9') {
+				r = fscanf_s(fp,"%c",&x);
+				if(r<=0) break;
+			}
+			if(r<=0) break;
+			cdata[i] = x-'0';
+			/*
+			if(n>49100) {
+				if(i%9==0) printf("\n");
+				printf("%d ",cdata[i]);
+				if(cdata[i]<0) { printf("ERROR %d %d %d\n",i,n,x); exit(-1); }
+			}
+			*/
+		}
+		//if(n%100==0)printf("%d finish\n",n);
+		if(r<=0) break;
+		++n;
+		cdata += 81;
+	}
+	printf("%d sudoku puzzle read\n",n);
+	this->N = n;
+}
 
 Sudoku::Sudoku(int N)
 {
@@ -338,8 +375,61 @@ void Sudoku::generate() {
 	}
 }
 
-Sudoku* Sudoku::solve() {
-	return NULL;
+void Sudoku::solve() {
+	// naive algorithm
+	//#pragma omp parallel
+	for(int n=0;n<N;++n) {
+		printf("Solving %d...\n",n);
+		bool fill[81] ={ 0 }; // log if i-th grid should be filled in
+		bool empty_value[9][9][3]={ 0 }; // (value, r/c/b number, row/col/block)
+		short trying_value[81] ={ 0 };
+		short *cdata = this->data + n*81;
+		for(int i=0;i<81;++i) {
+			int r = i/9;
+			int c = i%9;
+			int b = 3*(r/3) + (c/3);
+			if(cdata[i]!=0) {
+				int v = cdata[i]-1;
+				empty_value[v][r][0] = true;
+				empty_value[v][c][1] = true;
+				empty_value[v][b][2] = true;
+			}
+			else fill[i] = true;	
+		}
+		// begin search
+		int k=0;
+		while(k<81) {
+			if(fill[k]) {
+				int r = k/9;
+				int c = k%9;
+				int b = 3*(r/3) + (c/3);
+				int v;
+				for(v=trying_value[k];v<9;++v) {
+					if(!(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2])) {
+						trying_value[k] = v+1;
+						cdata[k] = v+1;
+						empty_value[v][r][0] = true;
+						empty_value[v][c][1] = true;
+						empty_value[v][b][2] = true;
+						break;
+					}
+				}
+				if(v>=9) {
+					--k;
+					int tr = k/9;
+					int tc = k%9;
+					int tb = 3*(tr/3)+(tc/3);
+					empty_value[cdata[k]-1][tr][0] = false;
+					empty_value[cdata[k]-1][tc][1] = false;
+					empty_value[cdata[k]-1][tb][2] = false;
+				}
+				else {
+					++k;
+				}
+			}
+		}
+
+	}
 }
 
 
