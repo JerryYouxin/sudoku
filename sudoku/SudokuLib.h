@@ -38,6 +38,16 @@ Sudoku::Sudoku(char* filename) {
 	this->data = new short[81000000];
 	short* cdata = this->data;
 	printf("reading file %s...\n",filename);
+	int r=1;
+	char x;
+	while(r>0) {
+		r = fread(cdata,1,162,fp);
+		r = fread(&x,1,1,fp);
+		if(r<=0) break;
+		++n;
+		cdata += 81;
+	}
+	/*
 	while(1) {
 		int r;
 		for(int i=0;i<81;++i) {
@@ -62,15 +72,33 @@ Sudoku::Sudoku(char* filename) {
 				if(cdata[i]<0) { printf("ERROR %d %d %d\n",i,n,x); exit(-1); }
 			}
 			*/
-		}
+	/*	}
 		//if(n%100==0)printf("%d finish\n",n);
 		if(r<=0) break;
 		++n;
 		cdata += 81;
 	}
+	*/
 	printf("%d sudoku puzzle read\n",n);
 	this->N = n;
 	this->hash_calced = 0;
+}
+
+void generate_sudoku(short* data, int N) {
+	for(int n=0;n<N;++n) {
+		int nBlank = (rand()/(double)RAND_MAX)*30+30;
+		short* cdata = data+n*81;
+		for(int i=0;i<81;++i) {
+			char* x = (char*)(cdata+i);
+			if(81-i == nBlank) {
+				nBlank--;
+				x[0] = '0';
+			} else if(rand()/(double)RAND_MAX > 0.6) {
+				nBlank--;
+				x[0] = '0';
+			}
+		}
+	}
 }
 
 Sudoku::Sudoku(int N)
@@ -301,6 +329,7 @@ void Sudoku::generate() {
 	if(1) {
 		//printf("gen rand batch\n");
 		generate_rand_sudoku_batch(cdata,N);
+		generate_sudoku(cdata,N);
 		//printf("fin");
 	}
 //#else
@@ -407,7 +436,7 @@ void Sudoku::generate() {
 
 void Sudoku::solve() {
 	// naive algorithm
-	//#pragma omp parallel
+	#pragma omp parallel for
 	for(int n=0;n<N;++n) {
 		//printf("Solving %d...\n",n);
 		//int t0 = clock();
@@ -471,6 +500,7 @@ void Sudoku::solve() {
 					++ik;
 				}
 		}
+		
 		//int t1 = clock();
 		//printf("\ttime:%d\n",t1-t0);
 	}
