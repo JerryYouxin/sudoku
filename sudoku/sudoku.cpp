@@ -54,6 +54,7 @@ int parse(int argc,char* argv[],int* N,char** path) {
 
 int main(int argc,char* argv[])
 {
+	int t0 = clock();
 	int N=0;
 	char* path=NULL;
 	parse(argc,argv,&N,&path);
@@ -63,7 +64,7 @@ int main(int argc,char* argv[])
 		sudoku = new Sudoku(N);
 		sudoku->generate();
 		sudoku->print();
-		sudoku->check();
+		//sudoku->check();
 		delete sudoku;
 	}
 	else if(path!=NULL) {
@@ -72,6 +73,8 @@ int main(int argc,char* argv[])
 		sudoku->print();
 		delete sudoku;
 	}
+	int t1 = clock();
+	printf("Clock Time: %d\n",t1-t0);
 	return 0;
 }
 
