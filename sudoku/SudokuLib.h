@@ -47,43 +47,12 @@ Sudoku::Sudoku(char* filename) {
 		++n;
 		cdata += 81;
 	}
-	/*
-	while(1) {
-		int r;
-		for(int i=0;i<81;++i) {
-			char x;
-			r = fscanf_s(fp,"%c",&x,1);
-			if(r<=0) break;
-			while(x<'0' || x>'9') {
-				r = fscanf_s(fp,"%c",&x,1);
-				if(r<=0) break;
-			}
-			if(r<=0) break;
-			char *tc = (char*)(cdata+i);
-			tc[0] = x;
-			if(i%9==8)
-				tc[1] = '\n';
-			else
-				tc[1] = ' ';
-			/*
-			if(n>49100) {
-				if(i%9==0) printf("\n");
-				printf("%d ",cdata[i]);
-				if(cdata[i]<0) { printf("ERROR %d %d %d\n",i,n,x); exit(-1); }
-			}
-			*/
-	/*	}
-		//if(n%100==0)printf("%d finish\n",n);
-		if(r<=0) break;
-		++n;
-		cdata += 81;
-	}
-	*/
 	printf("%d sudoku puzzle read\n",n);
 	this->N = n;
 	this->hash_calced = 0;
 }
 
+// generate puzzle from answers.
 void generate_sudoku(short* data, int N) {
 	for(int n=0;n<N;++n) {
 		int nBlank = (rand()/(double)RAND_MAX)*30+30;
@@ -284,12 +253,6 @@ void generate_rand_sudoku_batch(short *data,int N) {
 				v = (v + 1)%9;
 			}
 			if(voff==9) {
-				/*for(int i=0;i<9;++i) {
-				for(int j=0;j<9;++j) {
-				printf("%d ",data[i*9+j]);
-				}
-				printf("\n");
-				}*/
 				int tr = (i-1)/9;
 				int tc = (i-1)%9;
 				int tb = 3*(tr/3)+(tc/3);
@@ -320,118 +283,13 @@ void generate_rand_sudoku_batch(short *data,int N) {
 }
 
 void Sudoku::generate() {
-	// Step 0: generate a random Sudoku.
 	short *cdata = this->data;
 	short *odata = this->data;
 	const int N = this->N;
 	int n;
-//#ifdef GEN_WITH_RANDBATCH
-	if(1) {
-		//printf("gen rand batch\n");
-		generate_rand_sudoku_batch(cdata,N);
-		generate_sudoku(cdata,N);
-		//printf("fin");
-	}
-//#else
-	else {
-		generate_rand_sudoku(cdata);
-		cdata += 81;
-		n = 1;
-
-		const int x[3][2] ={ { 1,2 }, { 0,1 },{ 0,2 } };
-
-		//printf("begin generate with transformation\n");
-		while(n<N) {
-			for(int i=0;i<8;++i) {
-				// Step 1: col/row transformation
-				for(int j1=-1;j1<1;++j1) { // row grid 1
-					// first row could not change
-					for(int k1=-1;k1<1;++k1) { // col grid 1
-						// first col could not change
-						for(int j2=-1;j2<3;++j2) { // row grid 2
-							for(int k2=-1;k2<3;++k2) { // col grid 2
-								for(int j3=-1;j3<3;++j3) { // row grid 3
-									for(int k3=-1;k3<3;++k3) { // col grid 3
-										if(j1<0&&k1<0&&j2<0&&k2<0&&j3<0&&k3<0) continue;
-										memcpy(cdata,odata,sizeof(short)*81);
-										if(j1>=0) {
-											memcpy(&cdata[9*(x[j1][1])],&odata[9*(x[j1][0])],sizeof(short)*9);
-											memcpy(&cdata[9*(x[j1][0])],&odata[9*(x[j1][1])],sizeof(short)*9);
-										}
-										if(j2>=0) {
-											memcpy(&cdata[9*(3+x[j2][1])],&odata[9*(3+x[j2][0])],sizeof(short)*9);
-											memcpy(&cdata[9*(3+x[j2][0])],&odata[9*(3+x[j2][1])],sizeof(short)*9);
-										}
-										if(j3>=0) {
-											memcpy(&cdata[9*(6+x[j3][1])],&odata[9*(6+x[j3][0])],sizeof(short)*9);
-											memcpy(&cdata[9*(6+x[j3][0])],&odata[9*(6+x[j3][1])],sizeof(short)*9);
-										}
-										if(k1>=0) {
-											for(int ii=0;ii<9;++ii) {
-												char* tpc0 = (char*)(cdata+ii*9+x[k1][0]);
-												char* tpc1 = (char*)(cdata+ii*9+x[k1][1]);
-												char* tpo0 = (char*)(odata+ii*9+x[k1][0]);
-												char* tpo1 = (char*)(odata+ii*9+x[k1][1]);
-												tpc0[0] = tpo1[0];
-												tpc1[0] = tpo0[0];
-											}
-										}
-										if(k2>=0) {
-											for(int ii=0;ii<9;++ii) {
-												char* tpc0 = (char*)(cdata+ii*9+3+x[k2][0]);
-												char* tpc1 = (char*)(cdata+ii*9+3+x[k2][1]);
-												char* tpo0 = (char*)(odata+ii*9+3+x[k2][0]);
-												char* tpo1 = (char*)(odata+ii*9+3+x[k2][1]);
-												tpc0[0] = tpo1[0];
-												tpc1[0] = tpo0[0];
-											}
-										}
-										if(k3>=0) {
-											for(int ii=0;ii<9;++ii) {
-												char* tpc0 = (char*)(cdata+ii*9+6+x[k3][0]);
-												char* tpc1 = (char*)(cdata+ii*9+6+x[k3][1]);
-												char* tpo0 = (char*)(odata+ii*9+6+x[k3][0]);
-												char* tpo1 = (char*)(odata+ii*9+6+x[k3][1]);
-												tpc0[0] = tpo1[0];
-												tpc1[0] = tpo0[0];
-											}
-										}
-										cdata += 81;
-										++n;
-										if(n>=N) return;
-									}
-								}
-							}
-						}
-					}
-				}
-				// Step 2: non-linear transformation
-				for(int j=0;j<81;++j) {
-					char* toj = (char*)(odata+j);
-					char* tcj = (char*)(cdata+j);
-					tcj[1] = toj[1];
-					if(toj[0]<4)
-						tcj[0] = toj[0]+1;
-					else if(toj[0]==4)
-						tcj[0] = toj[0]+2;
-					else if(toj[0]==5)
-						tcj[0] = toj[0];
-					else
-						tcj[0] = ((toj[0]+1)%9)+'1';
-				}
-				odata = cdata;
-				cdata += 81;
-				// Step 3: loop back to Step 1.
-				++n;
-			}
-			// Step 4: if already create all equal sudoku, generate new one and loop back to Step 1.
-			if(n<N) {
-				generate_rand_sudoku(cdata);
-				cdata += 81;
-				++n;
-			}
-		}
-	}
+	printf("gen rand batch\n");
+	generate_rand_sudoku_batch(cdata,N);
+	printf("fin");
 }
 
 void Sudoku::solve() {
@@ -505,5 +363,3 @@ void Sudoku::solve() {
 		//printf("\ttime:%d\n",t1-t0);
 	}
 }
-
-
