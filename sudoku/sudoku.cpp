@@ -59,6 +59,7 @@ int main(int argc,char* argv[])
 	char* path=NULL;
 	parse(argc,argv,&N,&path);
 	Sudoku *sudoku;
+	//N = 1000000;
 	if(N>0) {
 		sudoku = new Sudoku(N);
 		sudoku->generate();

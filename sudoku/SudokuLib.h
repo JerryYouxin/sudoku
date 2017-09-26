@@ -35,6 +35,10 @@ Sudoku::Sudoku(char* filename) {
 	int n=0;
 	FILE *fp;
 	fopen_s(&fp,filename,"r");
+	if(fp==NULL) {
+		printf("ERROR: File %s open failed!\n",filename);
+		exit(1);
+	}
 	this->data = new short[81000000];
 	short* cdata = this->data;
 	printf("reading file %s...\n",filename);
@@ -55,14 +59,14 @@ Sudoku::Sudoku(char* filename) {
 // generate puzzle from answers.
 void generate_sudoku(short* data, int N) {
 	for(int n=0;n<N;++n) {
-		int nBlank = (rand()/(double)RAND_MAX)*30+30;
+		int nBlank = (rand()%31)+30;
 		short* cdata = data+n*81;
 		for(int i=0;i<81;++i) {
 			char* x = (char*)(cdata+i);
 			if(81-i == nBlank) {
 				nBlank--;
 				x[0] = '0';
-			} else if(rand()/(double)RAND_MAX > 0.6) {
+			} else if(rand()/(float)RAND_MAX > 0.6) {
 				nBlank--;
 				x[0] = '0';
 			}
@@ -91,6 +95,10 @@ void Sudoku::print() {
 	FILE* fp;
 	//printf("now writing...\n");
 	fopen_s(&fp,"sudoku.txt","w");
+	if(fp==0) {
+		printf("ERROR: File sudoku.txt open failed.\n");
+		exit(1);
+	}
 	char *pbuff = buff;
 	short* dp = this->data;
 	for(int n=0; n<N; ++n) {
@@ -170,7 +178,7 @@ void generate_rand_sudoku(short *data) {
 	empty_value[4][0][0] = true; // 1st row
 	empty_value[4][0][1] = true; // 1st col
 	empty_value[4][0][2] = true; // 1st block
-	tried_value[81][4] = true;
+	tried_value[0][4] = true;
 	// block = 3*(row/3) + col/3
 	int count = 0;
 		for(int i=1;i<81;++i) {
@@ -221,7 +229,7 @@ void generate_rand_sudoku_batch(short *data,int N) {
 	empty_value[4][0][0] = true; // 1st row
 	empty_value[4][0][1] = true; // 1st col
 	empty_value[4][0][2] = true; // 1st block
-	tried_value[81][4] = true;
+	tried_value[0][4] = true;
 	// block = 3*(row/3) + col/3
 	int count = 0;
 	int tcount = 0;
@@ -286,7 +294,7 @@ void Sudoku::generate() {
 	short *cdata = this->data;
 	short *odata = this->data;
 	const int N = this->N;
-	int n;
+	//int n;
 	printf("gen rand batch\n");
 	generate_rand_sudoku_batch(cdata,N);
 	printf("fin");
@@ -344,6 +352,12 @@ void Sudoku::solve() {
 				}
 				if(v>=9) {
 					trying_value[k] = 0;
+					if(ik==0) {
+						// no number can fill in the first empty block
+						// so no answer could be found
+						printf("%d No answer!\n",n);
+						break;
+					}
 					--ik;
 					int tr = fill[ik]/9;
 					int tc = fill[ik]%9;
