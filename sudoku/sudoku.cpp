@@ -58,20 +58,33 @@ int main(int argc,char* argv[])
 	int N=0;
 	char* path=NULL;
 	parse(argc,argv,&N,&path);
-	Sudoku *sudoku;
+	//Sudoku *sudoku;
+	Core core;
 	//N = 1000000;
 	if(N>0) {
-		sudoku = new Sudoku(N);
-		sudoku->generate();
-		sudoku->print();
+		int *result = new int[N*81];
+		core.generate(N,result);
+		core.write_sudoku(N,result,"sudoku.txt");
+		delete result;
+		//sudoku = new Sudoku(N);
+		//sudoku->generate();
+		//sudoku->print();
 		//sudoku->check();
-		delete sudoku;
+		//delete sudoku;
 	}
 	else if(path!=NULL) {
-		sudoku = new Sudoku(path);
-		sudoku->solve();
-		sudoku->print();
-		delete sudoku;
+		int *puzzle = 0;
+		int n;
+		n = core.read_sudoku(&puzzle,path);
+		int *solution = new int[n*81];
+		core.solve(n,puzzle,solution);
+		core.write_sudoku(n,puzzle,"sudoku.txt");
+		delete puzzle;
+		delete solution;
+		//sudoku = new Sudoku(path);
+		//sudoku->solve();
+		//sudoku->print();
+		//delete sudoku;
 	}
 	int t1 = clock();
 	printf("Clock Time: %d\n",t1-t0);
