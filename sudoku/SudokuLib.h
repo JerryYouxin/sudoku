@@ -165,8 +165,29 @@ void Core::generate(int number,int mode,int result[][81]) {
 	printf("Not Implemented\n");
 }
 void Core::generate(int number,int lower,int upper,bool unique,int result[][81]) {
-	// TODO
-	printf("Not Implemented\n");
+	if(unique) {
+		// TODO
+		printf("Not Implemented\n");
+	} else {
+		generate(number,result);
+		srand((unsigned int)time(0));
+		for(int n=0;n<number;++n) {
+			int num = rand()%(upper-lower+1)+lower;
+			for(int i=0;i<81;++i) {
+				if(81-i+1<=num) {
+					result[n][i] = 0;
+					--num;
+				}
+				else {
+					double r = rand()/(double)RAND_MAX;
+					if(r<0.5) {
+						result[n][i] = 0;
+						--num;
+					}
+				}
+			}
+		}
+	}
 }
 void Core::generate(int number,int result[][81]) {
 	int __data[81] ={ 0 };
