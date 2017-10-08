@@ -165,7 +165,8 @@ int main(int argc,char* argv[])
 	//N = 1000000;
 	if(parser.code_type==parser._C) {
 		int *result = new int[N*81];
-		core.generate(N,result);
+		int(*hh)[81] = (int(*)[81])result;
+		core.generate(N,hh);
 		core.write_sudoku(N,result,"sudoku.txt");
 		delete result;
 	}
@@ -181,13 +182,15 @@ int main(int argc,char* argv[])
 	}
 	else if(parser.code_type==parser._M) {
 		int *result = new int[N*81];
-		core.generate(N,parser.mode,result);
+		int(*hh)[81] = (int(*)[81])result;
+		core.generate(N,parser.mode,hh);
 		core.write_sudoku(N,result,"sudoku.txt");
 		delete result;
 	}
 	else if(parser.code_type==parser._R) {
 		int *result = new int[N*81];
-		core.generate(N,parser.lower,parser.upper,parser.unique,result);
+		int (*hh)[81] = (int(*)[81])result;
+		core.generate(N,parser.lower,parser.upper,parser.unique,hh);
 		core.write_sudoku(N,result,"sudoku.txt");
 		delete result;
 	}

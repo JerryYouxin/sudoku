@@ -3,22 +3,91 @@
 #include "windows.h"
 #include "stdio.h"
 #include <iostream>
+#include <map>
+#include <string>
 
 class Core
 {
 	public:
-	void generate(int number,int mode,int *result);
-	void generate(int number,int lower,int upper,bool unique,int *result);
-	void generate(int number,int *result); // generate final states
-	bool solve(int *puzzle,int *solution);
+	// sudoku generator
+	void generate(int number,int mode,int result[][81]);
+	void generate(int number,int lower,int upper,bool unique,int result[][81]);
+	void generate(int number,int result[][81]); // generate final states
+	// sudoku solver
+	bool solve(int puzzle[],int solution[]);
 	void solve(int number,int *puzzle,int *solution);
+	// I/O functions
 	int read_sudoku(int **puzzle,const char* filename);
 	int write_sudoku(int number,int *puzzle,const char* filename);
+	// check functions
+	bool check_valid(int *solution);
+	int  check_valid(int number,int *solution);
+	bool check_same(int number,int *solution);
+	// Error codes
 	const int FILE_OPEN_ERROR = -2;
 	const int FILE_READ_ERROR = -1;
 	const int FILE_WRITE_ERROR= -1;
 	const int SUDOKU_NUM_ERROR= -1;
 };
+
+typedef std::map<std::string, int> hashMap;
+
+bool Core::check_same(int number,int *solution) {
+	if(solution==0||number<=0) return false;
+	hashMap hmap;
+	long long hash[6];
+	for(int i=0;i<number;++i) {
+		int* ptr = solution+i*81;
+		memset(hash,0,6*sizeof(long long));
+		// convert to 6 long long
+		char* ph = (char*)hash;
+		for(int j=0;j<40;++j) {
+			ph[j] = ptr[2*j]|(ptr[2*j+1]<<4);
+		}
+		ph[40] = ptr[80];
+		ph[41] = '\0';
+		std::string x(ph);
+		// search if the number is already exist
+		hashMap::iterator it= hmap.find(x);
+		if(it == hmap.end()) {
+			hmap[x] = 1;
+		}
+		else {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Core::check_valid(int *solution) {
+	if(solution==0) return false;
+	bool empty_value[9][9][3]={ 0 }; // (value, r/c/b number, row/col/block)
+	for(int r=0;r<9;++r) {
+		for(int c=0;c<9;++c) {
+			int b = 3*(r/3)+(c/3);
+			int i = r*9+c;
+			int v = solution[i]-1;
+			if(v>9||v<1) return false;
+			if(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2]) {
+				return false;
+			}
+			empty_value[v][r][0] = true;
+			empty_value[v][c][1] = true;
+			empty_value[v][b][2] = true;
+		}
+	}
+	return true;
+}
+
+int Core::check_valid(int number,int *solution) {
+	if(solution==0) return -1;
+	for(int i=0;i<number;++i) {
+		if(!check_valid(solution+i*81)) {
+			return i;
+		}
+	}
+	return 0;
+}
 
 int Core::read_sudoku(int **puzzle,const char* filename) {
 	int n = 0;
@@ -91,15 +160,15 @@ int Core::write_sudoku(int number,int *puzzle,const char* filename) {
 	return 0;
 }
 
-void Core::generate(int number,int mode,int *result) {
+void Core::generate(int number,int mode,int result[][81]) {
 	// TODO
 	printf("Not Implemented\n");
 }
-void Core::generate(int number,int lower,int upper,bool unique,int *result) {
+void Core::generate(int number,int lower,int upper,bool unique,int result[][81]) {
 	// TODO
 	printf("Not Implemented\n");
 }
-void Core::generate(int number,int *result) {
+void Core::generate(int number,int result[][81]) {
 	int __data[81] ={ 0 };
 	bool tried_value[81][9] ={ 0 };
 	bool empty_value[9][9][3]={ 0 }; // (value, r/c/b number, row/col/block)
@@ -146,7 +215,7 @@ void Core::generate(int number,int *result) {
 		count = 0;
 		//if(n%10000==0)
 		//	printf("n=%d\n",n);
-		memcpy(result+n*81,__data,sizeof(int)*81);
+		memcpy(result[n],__data,sizeof(int)*81);
 		int tr = (i-1)/9;
 		int tc = (i-1)%9;
 		int tb = 3*(tr/3)+(tc/3);
@@ -157,7 +226,7 @@ void Core::generate(int number,int *result) {
 		--i;
 	}
 }
-bool Core::solve(int *puzzle,int *solution) {
+bool Core::solve(int puzzle[],int solution[]) {
 	int fill[82]; // log if i-th grid should be filled in
 	memset(fill,-1,sizeof(int)*82);
 	if(puzzle!=solution)
