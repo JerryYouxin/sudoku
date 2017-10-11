@@ -172,6 +172,7 @@ void Core::generate(int number,int mode,int result[][81]) {
 	int num = 0;
 	int the_time = 0;
 	int hollow_num = 0;
+	generate(number, result);
 	for (sudoku_num == 0; sudoku_num < number; sudoku_num++)
 	{
 		free_degree = 0;
