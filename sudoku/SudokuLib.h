@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <new>
+#include "time.h"
 
 class Core
 {
@@ -26,6 +27,9 @@ class Core
 	bool check_valid(int *solution);
 	int  check_valid(int number,int *solution);
 	bool check_same(int number,int *solution);
+	//some tool functions
+	int get_free_degree_plus(int betsudoku[], int index);
+
 	// Error codes
 	static const int FILE_OPEN_ERROR = -2;
 	static const int FILE_READ_ERROR = -1;
@@ -532,8 +536,163 @@ int Core::write_sudoku(int number,int *puzzle,const char* filename) {
 }
 
 void Core::generate(int number,int mode,int result[][81]) {
-	// TODO
-	printf("Not Implemented\n");
+	int i = 0;
+	int free_degree = 0;
+	int sudoku_num = 0;
+	int num = 0;
+	int the_time = 0;
+	int hollow_num = 0;
+	generate(number, result);
+	for (sudoku_num == 0; sudoku_num < number; sudoku_num++)
+	{
+		free_degree = 0;
+		num = 0;
+		if (mode == 1)
+		{
+			srand((unsigned)time(NULL));
+			hollow_num=rand() % 9 + 40;
+			if (the_time == 0)
+			{
+				for (i = 0;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 700)
+					{
+						the_time = 1;
+						continue;
+					}
+				}
+
+
+			}
+			else
+			{
+				for (i = 1;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 700)
+					{
+						the_time = 0;
+						continue;
+					}
+				}
+			}
+		}
+		if (mode == 2)
+		{
+			srand((unsigned)time(NULL));
+			hollow_num = rand() % 9 + 49;
+			if (the_time == 0)
+			{
+				for (i = 0; i < 81; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 900)
+					{
+						the_time = 1;
+						continue;
+					}
+				}
+				for (i = 1;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 900)
+					{
+						the_time = 1;
+						continue;
+					}
+				}
+			}
+			else
+			{
+				for (i = 1; i < 81; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 900)
+					{
+						the_time = 0;
+						continue;
+					}
+				}
+				for (i = 0;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 900)
+					{
+						the_time = 0;
+						continue;
+					}
+				}
+			}
+		}
+		if (mode == 3)
+		{
+			srand((unsigned)time(NULL));
+			hollow_num = rand() % 9 + 58;
+			if (the_time == 0)
+			{
+				for (i = 0; i < 81; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 1100)
+					{
+						the_time = 1;
+						continue;
+					}
+				}
+				for (i = 1;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 1100)
+					{
+						the_time = 1;
+						continue;
+					}
+				}
+			}
+			else
+			{
+				for (i = 0; i < 81; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 1100)
+					{
+						the_time = 0;
+						continue;
+					}
+				}
+				for (i = 1;; i = i + 2)
+				{
+					result[sudoku_num][i] = 0;
+					num++;
+					free_degree += get_free_degree_plus(result[num], i);
+					if (num >= hollow_num || free_degree >= 1100)
+					{
+						the_time = 0;
+						continue;
+					}
+				}
+			}
+		}
+	}
 }
 
 bool Core::__generate_unique(int num, int maxNum, int index, int result[]) {
@@ -730,4 +889,58 @@ bool Core::isUniqueSolve(int puzzle[]) {
 	solver.solve((int(*)[81])solution);
 	delete[] solution;
 	return solver.getSolvedNum()==1;
+}
+
+int Core::get_free_degree_plus(int betsudoku[], int index)
+{
+	int i = index / 9;
+	int j = index % 9;
+	/* x为n所在的小九宫格左顶点竖坐标 */
+	int x = index / 9 / 3 * 3;
+	/* y为n所在的小九宫格左顶点横坐标 */
+	int y = index % 9 / 3 * 3;
+
+	int line_free_degree = 0;
+	int column_free_degree = 0;
+	int area_free_degree = 0;
+	int free_degree = 0;
+	// 循环变量
+	int p = 0;
+	int q = 0;
+	//区域自由度
+	for (p = x; p < x + 3; p++)
+	{
+		for (q = y; q < y + 3; q++)
+		{
+			if ((betsudoku[9 * p + q] == 0) && ((9 * p + q) != index) && (i != p) && (j != q))
+			{
+				area_free_degree++;
+			}
+			else
+			{
+				continue;
+			}
+		}
+	}
+	//行自由度
+	for (p = 9 * i; p < 9 * i + 9; p++)
+	{
+		if (betsudoku[p] == 0)
+		{
+			line_free_degree++;
+		}
+	}
+
+
+	//列自由度
+	for (q = j; q < 81; q = q + 9)
+	{
+		if (betsudoku[q] == 0)
+		{
+			column_free_degree++;
+		}
+	}
+
+	free_degree = area_free_degree + line_free_degree + column_free_degree;
+	return free_degree;
 }
