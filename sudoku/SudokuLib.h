@@ -52,31 +52,6 @@ typedef struct DLXNode_st {
 
 typedef DLXNode ColumnNode;
 
-class NodePool {
-	public:
-	NodePool() {
-		allocatedNum = 0;
-		freeNum = 729*4+324;
-		pool = new DLXNode[freeNum];
-	}
-	DLXNode* allocNode() {
-		if(freeNum==0) return 0;
-		DLXNode* res = &pool[allocatedNum];
-		allocatedNum++;
-		freeNum--;
-		return res;
-	}
-	void deallocAll() {
-		freeNum=729*4+324;
-		allocatedNum = 0;
-	}
-	~NodePool() { delete[] pool; }
-	private:
-	DLXNode* pool;
-	int allocatedNum;
-	int freeNum;
-};
-
 class DLXSolver 
 {
 	public:
@@ -877,7 +852,7 @@ void Core::solve(int number,int *puzzle,int *solution) {
 	for(int i=0;i<number;++i) {
 		//if(i%1000==0)printf("Solving %d...\n",i);
 		//solve(puzzle+i*81,solution+i*81);
-		DLX_solve(puzzle+i*81,solution+i*81);
+		solve(puzzle+i*81,solution+i*81);
 	}
 }
 

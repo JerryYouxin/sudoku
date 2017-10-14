@@ -185,6 +185,23 @@ Parser::Parser(int argc,char* argv[]) {
 	err = 0;
 }
 
+void file_write_error(int r) {
+	switch(r) {
+		case Core::FILE_OPEN_ERROR:
+			printf("Error: file %s could not open\n","sudoku.txt");
+			break;
+		case Core::FILE_WRITE_ERROR:
+			printf("Error: file %s write error\n","sudoku.txt");
+			break;
+		case Core::MEMORY_ALLOC_ERROR:
+			printf("Error: not enough memory!\n");
+			break;
+		default:
+			printf("Unknown error detected.\n");
+	}
+	exit(1);
+}
+
 int main(int argc,char* argv[])
 {
 	int t0 = clock();
@@ -211,15 +228,12 @@ int main(int argc,char* argv[])
 				case Core::FILE_OPEN_ERROR:
 					printf("Error: file %s could not open\n",path);
 					goto error;
-					break;
 				case Core::FILE_READ_ERROR:
-					printf("Error: file %s write error\n",path);
+					printf("Error: file %s read error\n",path);
 					goto error;
-					break;
 				case Core::MEMORY_ALLOC_ERROR:
 					printf("Error: not enough memory!\n");
 					goto error;
-					break;
 				default:
 					printf("Unknown error detected.\n");
 					goto error;
@@ -229,23 +243,7 @@ int main(int argc,char* argv[])
 		core.solve(n,puzzle,solution);
 		int r = core.write_sudoku(n,solution,"sudoku.txt");
 		if(r<0) {
-			switch(r) {
-				case Core::FILE_OPEN_ERROR:
-					printf("Error: file %s could not open\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::FILE_WRITE_ERROR:
-					printf("Error: file %s write error\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::MEMORY_ALLOC_ERROR:
-					printf("Error: not enough memory!\n");
-					goto error;
-					break;
-				default:
-					printf("Unknown error detected.\n");
-					goto error;
-			}
+			file_write_error(r);
 		}
 		delete puzzle;
 		delete[] solution;
@@ -256,23 +254,7 @@ int main(int argc,char* argv[])
 		core.generate(N,parser.mode,hh);
 		int r = core.write_sudoku(N,result,"sudoku.txt");
 		if(r<0) {
-			switch(r) {
-				case Core::FILE_OPEN_ERROR:
-					printf("Error: file %s could not open\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::FILE_WRITE_ERROR:
-					printf("Error: file %s write error\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::MEMORY_ALLOC_ERROR:
-					printf("Error: not enough memory!\n");
-					goto error;
-					break;
-				default:
-					printf("Unknown error detected.\n");
-					goto error;
-			}
+			file_write_error(r);
 		}
 		delete[] result;
 	}
@@ -282,24 +264,10 @@ int main(int argc,char* argv[])
 		core.generate(N,parser.lower,parser.upper,parser.unique,hh);
 		int r = core.write_sudoku(N,result,"sudoku.txt");
 		if(r<0) {
-			switch(r) {
-				case Core::FILE_OPEN_ERROR:
-					printf("Error: file %s could not open\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::FILE_WRITE_ERROR:
-					printf("Error: file %s write error\n","sudoku.txt");
-					goto error;
-					break;
-				case Core::MEMORY_ALLOC_ERROR:
-					printf("Error: not enough memory!\n");
-					goto error;
-					break;
-				default:
-					printf("Unknown error detected.\n");
-					goto error;
-			}
+			file_write_error(r);
 		}
+		core.check_same(N,result);
+		core.check_valid(N,result);
 		delete[] result;
 	}
 	int t1 = clock();
