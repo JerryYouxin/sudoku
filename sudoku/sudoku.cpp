@@ -38,13 +38,25 @@ class Parser {
 };
 int Parser::string2int(char* str,int *value) {
 	int v = 0;
-	for(int i=0; str[i]!='\0'; ++i) {
-		if(str[i]<'0'&&str[i]>'9') {
+	int i = 0;
+	int signal = 1;
+	if(str[i]=='-') {
+		signal = -1;
+		++i;
+	}
+	else if(str[i]=='+') {
+		++i;
+	}
+	for(; str[i]!='\0'; ++i) {
+		if(str[i]<'0'||str[i]>'9') {
 			return -1;
+		}
+		else if(i>9) {
+			return -2;
 		}
 		v = v*10+str[i]-'0';
 	}
-	*value = v;
+	*value = signal*v;
 	return 0;
 }
 
@@ -61,6 +73,11 @@ Parser::Parser(int argc,char* argv[]) {
 			if(r<0) {
 				printf("Error: could not parse input value: %s (error code %d)\n",argv[i],r);
 				err = -2;
+				return;
+			}
+			if(N<NMIN||N>CMAX) {
+				printf("Error: input value is out of range: %d (valid range:%d~%d)\n",N,NMIN,CMAX);
+				err = -3;
 				return;
 			}
 			printf("N = %d\n",N);
@@ -90,6 +107,11 @@ Parser::Parser(int argc,char* argv[]) {
 				err = -2;
 				return;
 			}
+			if(N<NMIN||N>NMAX) {
+				printf("Error: input value is out of range: %d (valid range:%d~%d)\n",N,NMIN,NMAX);
+				err = -3;
+				return;
+			}
 			printf("N = %d\n",N);
 			if(code_type==0) code_type = _N;
 		}
@@ -106,6 +128,11 @@ Parser::Parser(int argc,char* argv[]) {
 				err = -2;
 				return;
 			}
+			if(mode!=EASY||mode!=NORM||mode!=HARD) {
+				printf("Error: Unknown mode input, valid mode choice: %d %d %d (from easy to hard)\n",EASY,NORM,HARD);
+				err = -3;
+				return;
+			}
 			printf("mode = %d\n",mode);
 			code_type = _M;
 		}
@@ -116,8 +143,8 @@ Parser::Parser(int argc,char* argv[]) {
 				err = -1;
 				return;
 			}
-			char* buf2;
-			char* buf3;
+			char* buf2=0;
+			char* buf3=0;
 			char* buf = strtok_s(argv[i],"~",&buf2);
 			int r = string2int(buf,&lower);
 			if(r<0) {
@@ -134,6 +161,11 @@ Parser::Parser(int argc,char* argv[]) {
 			}
 			if(lower>upper) {
 				printf("Error: lower %d is larger than upper %d.\n",lower,upper);
+				err = -3;
+				return;
+			}
+			if(lower<RMIN||lower>RMAX||upper<RMIN||upper>RMAX) {
+				printf("Error: input range is out of range: %d~%d(valid range: %d~%d)\n",lower,upper,RMIN,RMAX);
 				err = -3;
 				return;
 			}
@@ -168,34 +200,112 @@ int main(int argc,char* argv[])
 		int(*hh)[81] = (int(*)[81])result;
 		core.generate(N,hh);
 		core.write_sudoku(N,result,"sudoku.txt");
-		delete result;
+		delete[] result;
 	}
 	else if(parser.code_type==parser._S) {
 		int *puzzle = 0;
 		int n;
 		n = core.read_sudoku(&puzzle,path);
+		if(n<0) {
+			switch(n) {
+				case Core::FILE_OPEN_ERROR:
+					printf("Error: file %s could not open\n",path);
+					goto error;
+					break;
+				case Core::FILE_READ_ERROR:
+					printf("Error: file %s write error\n",path);
+					goto error;
+					break;
+				case Core::MEMORY_ALLOC_ERROR:
+					printf("Error: not enough memory!\n");
+					goto error;
+					break;
+				default:
+					printf("Unknown error detected.\n");
+					goto error;
+			}
+		}
 		int *solution = new int[n*81];
 		core.solve(n,puzzle,solution);
-		core.write_sudoku(n,puzzle,"sudoku.txt");
+		int r = core.write_sudoku(n,solution,"sudoku.txt");
+		if(r<0) {
+			switch(r) {
+				case Core::FILE_OPEN_ERROR:
+					printf("Error: file %s could not open\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::FILE_WRITE_ERROR:
+					printf("Error: file %s write error\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::MEMORY_ALLOC_ERROR:
+					printf("Error: not enough memory!\n");
+					goto error;
+					break;
+				default:
+					printf("Unknown error detected.\n");
+					goto error;
+			}
+		}
 		delete puzzle;
-		delete solution;
+		delete[] solution;
 	}
 	else if(parser.code_type==parser._M) {
 		int *result = new int[N*81];
 		int(*hh)[81] = (int(*)[81])result;
 		core.generate(N,parser.mode,hh);
-		core.write_sudoku(N,result,"sudoku.txt");
-		delete result;
+		int r = core.write_sudoku(N,result,"sudoku.txt");
+		if(r<0) {
+			switch(r) {
+				case Core::FILE_OPEN_ERROR:
+					printf("Error: file %s could not open\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::FILE_WRITE_ERROR:
+					printf("Error: file %s write error\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::MEMORY_ALLOC_ERROR:
+					printf("Error: not enough memory!\n");
+					goto error;
+					break;
+				default:
+					printf("Unknown error detected.\n");
+					goto error;
+			}
+		}
+		delete[] result;
 	}
 	else if(parser.code_type==parser._R) {
 		int *result = new int[N*81];
 		int (*hh)[81] = (int(*)[81])result;
 		core.generate(N,parser.lower,parser.upper,parser.unique,hh);
-		core.write_sudoku(N,result,"sudoku.txt");
-		delete result;
+		int r = core.write_sudoku(N,result,"sudoku.txt");
+		if(r<0) {
+			switch(r) {
+				case Core::FILE_OPEN_ERROR:
+					printf("Error: file %s could not open\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::FILE_WRITE_ERROR:
+					printf("Error: file %s write error\n","sudoku.txt");
+					goto error;
+					break;
+				case Core::MEMORY_ALLOC_ERROR:
+					printf("Error: not enough memory!\n");
+					goto error;
+					break;
+				default:
+					printf("Unknown error detected.\n");
+					goto error;
+			}
+		}
+		delete[] result;
 	}
 	int t1 = clock();
 	printf("Clock Time: %d\n",t1-t0);
 	return 0;
+error:
+	return -1;
 }
 

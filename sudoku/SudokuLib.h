@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <new>
 
 class Core
 {
@@ -15,7 +16,9 @@ class Core
 	void generate(int number,int result[][81]); // generate final states
 	// sudoku solver
 	bool solve(int puzzle[],int solution[]);
+	bool DLX_solve(int puzzle[],int solution[]);
 	void solve(int number,int *puzzle,int *solution);
+	bool isUniqueSolve(int puzzle[]);
 	// I/O functions
 	int read_sudoku(int **puzzle,const char* filename);
 	int write_sudoku(int number,int *puzzle,const char* filename);
@@ -24,28 +27,379 @@ class Core
 	int  check_valid(int number,int *solution);
 	bool check_same(int number,int *solution);
 	// Error codes
-	const int FILE_OPEN_ERROR = -2;
-	const int FILE_READ_ERROR = -1;
-	const int FILE_WRITE_ERROR= -1;
-	const int SUDOKU_NUM_ERROR= -1;
+	static const int FILE_OPEN_ERROR = -2;
+	static const int FILE_READ_ERROR = -1;
+	static const int FILE_WRITE_ERROR= -1;
+	static const int SUDOKU_NUM_ERROR= -1;
+	static const int MEMORY_ALLOC_ERROR = -3;
+	
+	private:
+	bool __generate_unique(int num,int maxNum,int index,int result[]);
 };
 
-typedef std::map<std::string, int> hashMap;
+typedef struct DLXNode_st {
+	int data;
+	int pos;
+	int colNum;
+	int numRows;
+	struct DLXNode_st *left,*right,*top,*bottom;
+}DLXNode;
 
+typedef DLXNode ColumnNode;
+
+class NodePool {
+	public:
+	NodePool() {
+		allocatedNum = 0;
+		freeNum = 729*4+324;
+		pool = new DLXNode[freeNum];
+	}
+	DLXNode* allocNode() {
+		if(freeNum==0) return 0;
+		DLXNode* res = &pool[allocatedNum];
+		allocatedNum++;
+		freeNum--;
+		return res;
+	}
+	void deallocAll() {
+		freeNum=729*4+324;
+		allocatedNum = 0;
+	}
+	~NodePool() { delete[] pool; }
+	private:
+	DLXNode* pool;
+	int allocatedNum;
+	int freeNum;
+};
+
+class DLXSolver 
+{
+	public:
+	DLXSolver(int puzzle[],int num);
+	void solve(int result[][81]);
+	void extract(int solution[]);
+	int getSolvedNum() { return solvedNum; }
+	~DLXSolver();
+
+	private:
+	int targetNum; // number of solutions aimed to found
+	int solvedNum;
+	bool *extracted;
+	int top;
+	int __solution[81];
+	DLXNode *head;
+	ColumnNode *curCol;
+	ColumnNode* colHead;//[324*729];
+	int __nodeNum = 324;
+	void cover(DLXNode *node);
+	void uncover(DLXNode *node);
+	inline void addRow(int i,int x);
+	inline void deleteNode(DLXNode* node);
+	ColumnNode* getColumn(DLXNode *node);
+	ColumnNode* chooseNextColumn();
+	const int COL_HEADER = -1;
+	int count = 0;
+};
+
+inline void DLXSolver::deleteNode(DLXNode* node) {
+	if(node==0) return;
+	printf("Deleting Node %d %d %d\n",node->colNum,node->data,node->pos);
+	node->bottom->top = node->top;
+	node->top->bottom = node->bottom;
+	node->left->right = node->right;
+	node->right->left = node->left;
+	delete node;
+	count--;
+	node = 0;
+	printf("finish\n");
+}
+
+inline void DLXSolver::addRow(int i,int x) {
+	int r = i/9;
+	int c = i%9;
+	int b = 3*(r/3)+(c/3);
+	int ik;
+	DLXNode *x1,*x2,*x3,*x4;
+	// i-th cell is filled
+	try {
+		x1 = &colHead[__nodeNum];//new DLXNode();
+		//colHead[__nodeNum] = x1;
+		__nodeNum++;
+		++count;
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc: %s\n",e.what());
+		exit(1);
+	}
+	x1->data = x;
+	x1->pos = i;
+	
+	x1->colNum = i;
+	
+	x1->bottom = colHead[i].bottom;
+	x1->top = &colHead[i];
+	colHead[i].bottom->top = x1;
+	colHead[i].bottom = x1;
+	++(colHead[i].numRows);
+	// r-th row is filled with x
+	try {
+		x2 = &colHead[__nodeNum];//new DLXNode();
+		//colHead[__nodeNum] = x2;
+		__nodeNum++;
+		++count;
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc: %s\n",e.what());
+		exit(1);
+	}
+	ik = 81+r*9+x-1;
+	x2->data = x;
+	x2->pos = i;
+	
+	x2->colNum = ik;
+	
+	x2->bottom = colHead[ik].bottom;
+	x2->top = &colHead[ik];
+	colHead[ik].bottom->top = x2;
+	colHead[ik].bottom = x2;
+	x2->left = x1;
+	x1->right= x2;
+	++(colHead[ik].numRows);
+	// c-th column is filled with x
+	try {
+		x3 = &colHead[__nodeNum];//new DLXNode();
+		//colHead[__nodeNum] = x3;
+		__nodeNum++;
+		++count;
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc: %s\n",e.what());
+		exit(1);
+	}
+	ik = 162+c*9+x-1;
+	x3->data = x;
+	x3->pos = i;
+	
+	x3->colNum = ik;
+	
+	x3->bottom = colHead[ik].bottom;
+	x3->top = &colHead[ik];
+	colHead[ik].bottom->top = x3;
+	colHead[ik].bottom = x3;
+	x3->left = x2;
+	x2->right= x3;
+	++(colHead[ik].numRows);
+	// b-th block is filled with x
+	try {
+		x4 = &colHead[__nodeNum];//new DLXNode();
+		//colHead[__nodeNum] = x4;
+		__nodeNum++;
+		++count;
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc: %s\n",e.what());
+		exit(1);
+	}
+	ik = 243+b*9+x-1;
+	x4->data = x;
+	x4->pos = i;
+	
+	x4->colNum = ik;
+	
+	x4->bottom = colHead[ik].bottom;
+	x4->top = &colHead[ik];
+	colHead[ik].bottom->top = x4;
+	colHead[ik].bottom = x4;
+	++(colHead[ik].numRows);
+	x4->left = x3;
+	x3->right= x4;
+	// link cycle
+	x4->right = x1;
+	x1->left = x4;
+}
+
+// define a problem for DLXSolver to solve
+DLXSolver::DLXSolver(int puzzle[],int num) {
+	//printf("initializing matrix...\n");
+	try {
+		this->extracted = new bool[num];
+		this->colHead = new DLXNode[324+4*729];
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc extracted[%d]: %s\n",num, e.what());
+		exit(1);
+	}
+	memset(extracted,0,num*sizeof(bool));
+	this->top = 0;
+	this->targetNum = num;
+	this->solvedNum = 0;
+	try{
+		head = new ColumnNode();
+		++count;
+	}
+	catch(const std::bad_alloc& e) {
+		printf("Failed to alloc: %s\n",e.what());
+		exit(1);
+	}
+	head->data = COL_HEADER;
+	head->numRows = 0;
+	head->top = head;
+	head->bottom = head;
+	// 324 = 81*4
+	// append column 0
+	colHead[0].data = COL_HEADER;
+	
+	colHead[0].colNum = 0;
+	
+	colHead[0].numRows = 0;
+	colHead[0].left = head;
+	head->right = &colHead[0];
+	colHead[0].top = &colHead[0];
+	colHead[0].bottom = &colHead[0];
+	for(int i=1;i<323;++i) {
+		// append column i
+		colHead[i].data = COL_HEADER;
+
+		colHead[i].colNum = i;
+
+		colHead[i].numRows = 0;
+		colHead[i-1].right = &colHead[i];
+		colHead[i].left = &colHead[i-1];
+		colHead[i].top = &colHead[i];
+		colHead[i].bottom = &colHead[i];
+	}
+	// append final column 323
+	colHead[323].data = COL_HEADER;
+
+	colHead[323].colNum = 323;
+
+	colHead[323].numRows = 0;
+	colHead[323].right = head;
+	colHead[323].left = &colHead[322];
+	colHead[322].right= &colHead[323];
+	head->left = &colHead[323];
+	colHead[323].top = &colHead[323];
+	colHead[323].bottom = &colHead[323];
+	// add rows
+	for(int i=0;i<81;++i) {
+		if(puzzle[i]>0) {
+			addRow(i,puzzle[i]);
+		}
+		else {
+			for(int j=1;j<=9;++j) {
+				addRow(i,j);
+			}
+		}
+	}
+	curCol = head;
+	//printf("fin.\n");
+}
+// detroyer
+DLXSolver::~DLXSolver() {
+	delete[] colHead;
+	delete head;
+	delete extracted;
+}
+// extract solution from node queue.
+void DLXSolver::extract(int solution[]) {
+	memcpy(solution,__solution,81*sizeof(int));
+}
+// choose next column from current column
+ColumnNode* DLXSolver::chooseNextColumn() {
+	int min=10;
+	int ik=0;
+	for(DLXNode* col=head->right;col!=head;col=col->right) {
+		//printf("%d : curColumn=%x, col=%x,head=%x,min=%d,numRow=%d, pos=%d, data=%d, next pos %d, data %d\n",col->colNum,curCol,col,head,min,col->numRows,col->bottom->pos,col->bottom->data,col->bottom->bottom->pos,col->bottom->bottom->data);
+		if(col->numRows < min) {
+			min = col->numRows;
+			curCol = col;
+		}
+	}
+	return curCol;
+}
+// solve
+void DLXSolver::solve(int result[][81]) {
+	if(head->right==head) {
+		// find a solution
+		++solvedNum;
+		return;
+	}
+	else {
+		ColumnNode *column = chooseNextColumn();
+		cover(column);
+		for(DLXNode *row=column->bottom;row!=column;row = row->bottom) {
+			//__solution[top] = row;
+			__solution[row->pos] = row->data;
+			//++top;
+			for(DLXNode* rNode = row->right;rNode!=row;rNode = rNode->right) {
+				cover(rNode);
+			}
+			solve(result);
+			if(solvedNum>0) {
+				if(!extracted[solvedNum-1]) {
+					//extract(result[solvedNum-1]);
+					memcpy(result[solvedNum-1],__solution,81*sizeof(int));
+					extracted[solvedNum-1]=true;
+				}
+				if(solvedNum>=targetNum) {
+					break;
+				}
+			}
+			//--top;
+			for(DLXNode* lNode = row->left;lNode!=row;lNode = lNode->left) {
+				uncover(lNode);
+			}
+		}
+		uncover(column);
+	}
+}
+
+ColumnNode* DLXSolver::getColumn(DLXNode *node) {
+	while(node->data!=COL_HEADER) node = node->top;
+	return node;
+}
+
+void DLXSolver::cover(DLXNode *node) {
+	ColumnNode *column = getColumn(node);
+	(column->left)->right = column->right;
+	(column->right)->left = column->left;
+	for(DLXNode* row = column->bottom;row!=column;row=row->bottom) {
+		for(DLXNode* rNode = row->right;rNode!=row;rNode=rNode->right) {
+			ColumnNode* x = getColumn(rNode);
+			--(x->numRows);
+			(rNode->top)->bottom = rNode->bottom;
+			(rNode->bottom)->top = rNode->top;
+		}
+	}
+}
+
+void DLXSolver::uncover(DLXNode *node) {
+	ColumnNode *column = getColumn(node);
+	(column->left)->right = column;
+	(column->right)->left = column;
+	for(DLXNode* row = column->bottom;row!=column;row=row->bottom) {
+		for(DLXNode* rNode = row->right;rNode!=row;rNode=rNode->right) {
+			ColumnNode* x = getColumn(rNode);
+			++x->numRows;
+			(rNode->top)->bottom = rNode;
+			(rNode->bottom)->top = rNode;
+		}
+	}
+}
+
+typedef std::map<std::string, int> hashMap;
+// same is false
 bool Core::check_same(int number,int *solution) {
 	if(solution==0||number<=0) return false;
 	hashMap hmap;
-	long long hash[6];
+	char ph[82];
 	for(int i=0;i<number;++i) {
 		int* ptr = solution+i*81;
-		memset(hash,0,6*sizeof(long long));
-		// convert to 6 long long
-		char* ph = (char*)hash;
-		for(int j=0;j<40;++j) {
-			ph[j] = ptr[2*j]|(ptr[2*j+1]<<4);
+		memset(ph,0,82);
+		for(int j=0;j<81;++j) {
+			ph[j] = ptr[j]+'0';
 		}
-		ph[40] = ptr[80];
-		ph[41] = '\0';
+		ph[81] = '\0';
 		std::string x(ph);
 		// search if the number is already exist
 		hashMap::iterator it= hmap.find(x);
@@ -58,7 +412,7 @@ bool Core::check_same(int number,int *solution) {
 	}
 	return true;
 }
-
+// valid is true
 bool Core::check_valid(int *solution) {
 	if(solution==0) return false;
 	bool empty_value[9][9][3]={ 0 }; // (value, r/c/b number, row/col/block)
@@ -67,7 +421,7 @@ bool Core::check_valid(int *solution) {
 			int b = 3*(r/3)+(c/3);
 			int i = r*9+c;
 			int v = solution[i]-1;
-			if(v>9||v<1) return false;
+			if(v>8||v<0) return false;
 			if(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2]) {
 				return false;
 			}
@@ -108,14 +462,19 @@ int Core::read_sudoku(int **puzzle,const char* filename) {
 	rewind(fp);
 	// allocate memory
 	//printf("allocate data: %d\n",size*sizeof(int));
-	data = new int[size];
+	//data = new int[size>81000000?81000000:size];
+	data = (int*)malloc(sizeof(int)*size);
+	if(data==0) {
+		return MEMORY_ALLOC_ERROR;
+	}
 	//printf("allocate rdata: %d\n",size*sizeof(char));
 	rdata= new char[size];
 	//printf("reading file %s...\n",filename);
 	r = fread(rdata,1,size,fp);
 	if(r<0 || r!=size) {
-		delete rdata;
-		delete data;
+		delete[] rdata;
+		free(data);
+		//delete data;
 		return FILE_READ_ERROR; // Error
 	}
 	for(i=0;i<size;++i) {
@@ -128,12 +487,17 @@ int Core::read_sudoku(int **puzzle,const char* filename) {
 	n = n/81;
 	//printf("%d sudoku puzzle read\n",n);
 	*puzzle = data;
-	delete rdata;
+	delete[] rdata;
+	fclose(fp);
 	return n;
 }
 
 int Core::write_sudoku(int number,int *puzzle,const char* filename) {
-	char* buff = new char[163*number+1];
+	if(number<1) return FILE_WRITE_ERROR;
+	char* buff = (char*)malloc(163*number+1);
+	if(buff==0) {
+		return MEMORY_ALLOC_ERROR;
+	}
 	char* pbuff= 0;
 	int * pdata= 0;
 	FILE* fp;
@@ -153,10 +517,17 @@ int Core::write_sudoku(int number,int *puzzle,const char* filename) {
 		//printf("ERROR: File sudoku.txt open failed.\n");
 		return FILE_OPEN_ERROR;
 	}
-	fwrite(buff,163,number,fp);
+	int r;
+	r = fwrite(buff,163,number,fp);
+	if(r<0) {
+		//delete buff;
+		free(buff);
+		return FILE_WRITE_ERROR; // Error
+	}
 	//printf("finish\n");
 	fclose(fp);
-	delete buff;
+	free(buff);
+	//delete buff;
 	return 0;
 }
 
@@ -164,10 +535,29 @@ void Core::generate(int number,int mode,int result[][81]) {
 	// TODO
 	printf("Not Implemented\n");
 }
+
+bool Core::__generate_unique(int num, int maxNum, int index, int result[]) {
+	if(index>=81||maxNum<=num) return maxNum<=num;
+	int x = result[index];
+	result[index] = 0;
+	if(isUniqueSolve(result)) {
+		return __generate_unique(num+1,maxNum,index+1,result);
+	}
+	else {
+		result[index] = x;
+		return __generate_unique(num,maxNum,index+1,result);
+	}
+}
+
 void Core::generate(int number,int lower,int upper,bool unique,int result[][81]) {
 	if(unique) {
-		// TODO
-		printf("Not Implemented\n");
+		generate(number,result);
+		srand((unsigned int)time(0));
+#pragma omp parallel for
+		for(int n=0;n<number;++n) {
+			int num = lower;//rand()%(upper-lower+1)+lower;
+			__generate_unique(0,num,0,result[n]);
+		}
 	} else {
 		generate(number,result);
 		srand((unsigned int)time(0));
@@ -248,6 +638,8 @@ void Core::generate(int number,int result[][81]) {
 	}
 }
 bool Core::solve(int puzzle[],int solution[]) {
+	return DLX_solve(puzzle,solution);
+	/* Naive solver
 	int fill[82]; // log if i-th grid should be filled in
 	memset(fill,-1,sizeof(int)*82);
 	if(puzzle!=solution)
@@ -312,12 +704,30 @@ bool Core::solve(int puzzle[],int solution[]) {
 			++ik;
 		}
 	}
-	return true;
+	return true;*/
 }
 void Core::solve(int number,int *puzzle,int *solution) {
 	#pragma omp parallel for
 	for(int i=0;i<number;++i) {
-		//printf("Solving %d...\n",i);
-		solve(puzzle+i*81,solution+i*81);
+		//if(i%1000==0)printf("Solving %d...\n",i);
+		//solve(puzzle+i*81,solution+i*81);
+		DLX_solve(puzzle+i*81,solution+i*81);
 	}
+}
+
+bool Core::DLX_solve(int puzzle[],int solution[]) {
+	DLXSolver solver(puzzle,1);
+	solver.solve((int(*)[81])solution);
+	if(solver.getSolvedNum()>0) return true;
+	//printf("No answer\n");
+	return false;
+}
+
+bool Core::isUniqueSolve(int puzzle[]) {
+	int *solution = new int[162];
+	memcpy(solution,puzzle,81*sizeof(int));
+	DLXSolver solver(puzzle,2);
+	solver.solve((int(*)[81])solution);
+	delete[] solution;
+	return solver.getSolvedNum()==1;
 }
