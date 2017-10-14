@@ -433,7 +433,7 @@ bool Core::check_valid(int *solution) {
 			int b = 3*(r/3)+(c/3);
 			int i = r*9+c;
 			int v = solution[i]-1;
-			if(v>8||v<0) return false;
+			if(solution[i]>9||solution[i]<0) return false;
 			if(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2]) {
 				return false;
 			}
@@ -815,7 +815,7 @@ void Core::generate(int number,int result[][81]) {
 	}
 }
 bool Core::solve(int puzzle[],int solution[]) {
-	if(!check_valid(puzzle)) throw InvalidSudokuException();
+	if(check_valid(puzzle)!=0) throw InvalidSudokuException();
 	return DLX_solve(puzzle,solution);
 	/* Naive solver
 	int fill[82]; // log if i-th grid should be filled in
@@ -892,8 +892,14 @@ void Core::solve(int number,int *puzzle,int *solution) {
 		try {
 			solve(puzzle+i*81,solution+i*81);
 		}
-		catch(std::exception e) {
-			throw e;
+		catch(InvalidSudokuException e) {
+			printf("Invalid sudoku inputs at %d:\n",i);
+			for(int j=0;j<9;++j) {
+				for(int k=0;k<9;++k) {
+					printf("%d ",puzzle[i*81+j*9+k]);
+				}
+				printf("\n");
+			}
 		}
 	}
 }
