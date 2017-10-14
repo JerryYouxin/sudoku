@@ -8,6 +8,38 @@
 #include <new>
 #include "time.h"
 
+struct RangeException : public std::exception
+{
+	const char * what() const throw ()
+	{
+		return "Range Exception";
+	}
+};
+
+struct NumException : public std::exception
+{
+	const char * what() const throw ()
+	{
+		return "Num Exception";
+	}
+};
+
+struct ModeException : public std::exception
+{
+	const char * what() const throw ()
+	{
+		return "Mode Exception";
+	}
+};
+
+struct InvalidSudokuException : public std::exception
+{
+	const char * what() const throw ()
+	{
+		return "Invalid Sudoku Exception";
+	}
+};
+
 class Core
 {
 	public:
@@ -502,6 +534,8 @@ int Core::write_sudoku(int number,int *puzzle,const char* filename) {
 }
 
 void Core::generate(int number,int mode,int result[][81]) {
+	if(number<1||number>10000) throw NumException();
+	if(mode!=1&&mode!=2&&mode!=3) throw ModeException();
 	int i = 0;
 	int free_degree = 0;
 	int sudoku_num = 0;
@@ -696,6 +730,8 @@ bool Core::__generate_unique(int num, int maxNum, int index, int result[]) {
 }
 
 void Core::generate(int number,int lower,int upper,bool unique,int result[][81]) {
+	if(number<1||number>10000) throw NumException();
+	if(lower>upper||lower<0||upper>64) throw RangeException();
 	if(unique) {
 		generate(number,result);
 #pragma omp parallel for
@@ -779,6 +815,7 @@ void Core::generate(int number,int result[][81]) {
 	}
 }
 bool Core::solve(int puzzle[],int solution[]) {
+	if(!check_valid(puzzle)) throw InvalidSudokuException();
 	return DLX_solve(puzzle,solution);
 	/* Naive solver
 	int fill[82]; // log if i-th grid should be filled in
@@ -852,7 +889,12 @@ void Core::solve(int number,int *puzzle,int *solution) {
 	for(int i=0;i<number;++i) {
 		//if(i%1000==0)printf("Solving %d...\n",i);
 		//solve(puzzle+i*81,solution+i*81);
-		solve(puzzle+i*81,solution+i*81);
+		try {
+			solve(puzzle+i*81,solution+i*81);
+		}
+		catch(std::exception e) {
+			throw e;
+		}
 	}
 }
 
