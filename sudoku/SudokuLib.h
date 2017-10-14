@@ -11,6 +11,7 @@
 class Core
 {
 	public:
+	Core() { srand(time(0)); }
 	// sudoku generator
 	void generate(int number,int mode,int result[][81]);
 	void generate(int number,int lower,int upper,bool unique,int result[][81]);
@@ -457,7 +458,6 @@ int Core::read_sudoku(int **puzzle,const char* filename) {
 	FILE *fp;
 	fopen_s(&fp,filename,"rb");
 	if(fp==NULL) {
-		//printf("ERROR: File %s open failed!\n",filename);
 		return FILE_OPEN_ERROR;
 	}
 	// get file size
@@ -465,15 +465,11 @@ int Core::read_sudoku(int **puzzle,const char* filename) {
 	size = ftell(fp);
 	rewind(fp);
 	// allocate memory
-	//printf("allocate data: %d\n",size*sizeof(int));
-	//data = new int[size>81000000?81000000:size];
 	data = (int*)malloc(sizeof(int)*size);
 	if(data==0) {
 		return MEMORY_ALLOC_ERROR;
 	}
-	//printf("allocate rdata: %d\n",size*sizeof(char));
 	rdata= new char[size];
-	//printf("reading file %s...\n",filename);
 	r = fread(rdata,1,size,fp);
 	if(r<0 || r!=size) {
 		delete[] rdata;
@@ -489,7 +485,6 @@ int Core::read_sudoku(int **puzzle,const char* filename) {
 	}
 	if(n%81!=0) return SUDOKU_NUM_ERROR;
 	n = n/81;
-	//printf("%d sudoku puzzle read\n",n);
 	*puzzle = data;
 	delete[] rdata;
 	fclose(fp);
@@ -518,20 +513,16 @@ int Core::write_sudoku(int number,int *puzzle,const char* filename) {
 	}
 	fopen_s(&fp,filename,"w");
 	if(fp==0) {
-		//printf("ERROR: File sudoku.txt open failed.\n");
 		return FILE_OPEN_ERROR;
 	}
 	int r;
 	r = fwrite(buff,163,number,fp);
 	if(r<0) {
-		//delete buff;
 		free(buff);
 		return FILE_WRITE_ERROR; // Error
 	}
-	//printf("finish\n");
 	fclose(fp);
 	free(buff);
-	//delete buff;
 	return 0;
 }
 
@@ -542,72 +533,79 @@ void Core::generate(int number,int mode,int result[][81]) {
 	int num = 0;
 	int the_time = 0;
 	int hollow_num = 0;
-	generate(number, result);
-	for (sudoku_num == 0; sudoku_num < number; sudoku_num++)
+	for (sudoku_num = 0; sudoku_num < number; sudoku_num++)
 	{
+		generate(1,(int(*)[81])result[sudoku_num]);
 		free_degree = 0;
 		num = 0;
 		if (mode == 1)
 		{
-			srand((unsigned)time(NULL));
 			hollow_num=rand() % 9 + 40;
 			if (the_time == 0)
 			{
-				for (i = 0;; i = i + 2)
+				for (int ii = 0;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 700)
-					{
-						the_time = 1;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 700)
+						{
+							the_time = 1;
+							break;
+						}
 					}
 				}
-
-
 			}
 			else
 			{
-				for (i = 1;; i = i + 2)
+				for (int ii = 1;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 700)
-					{
-						the_time = 0;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 700)
+						{
+							the_time = 0;
+							break;
+						}
 					}
 				}
 			}
 		}
 		if (mode == 2)
 		{
-			srand((unsigned)time(NULL));
 			hollow_num = rand() % 9 + 49;
 			if (the_time == 0)
 			{
 				for (i = 0; i < 81; i = i + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 900)
-					{
-						the_time = 1;
-						continue;
+					if(rand()/(double)RAND_MAX<0.5) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 900)
+						{
+							the_time = 1;
+							break;
+						}
 					}
 				}
-				for (i = 1;; i = i + 2)
+				for (int ii = 1;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 900)
-					{
-						the_time = 1;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 900)
+						{
+							the_time = 1;
+							break;
+						}
 					}
 				}
 			}
@@ -615,54 +613,63 @@ void Core::generate(int number,int mode,int result[][81]) {
 			{
 				for (i = 1; i < 81; i = i + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 900)
-					{
-						the_time = 0;
-						continue;
+					if(rand()/(double)RAND_MAX<0.5) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 900)
+						{
+							the_time = 0;
+							break;
+						}
 					}
 				}
-				for (i = 0;; i = i + 2)
+				for (int ii = 0;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 900)
-					{
-						the_time = 0;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 900)
+						{
+							the_time = 0;
+							break;
+						}
 					}
 				}
 			}
 		}
 		if (mode == 3)
 		{
-			srand((unsigned)time(NULL));
 			hollow_num = rand() % 9 + 58;
 			if (the_time == 0)
 			{
 				for (i = 0; i < 81; i = i + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 1100)
-					{
-						the_time = 1;
-						continue;
+					if(rand()/(double)RAND_MAX<0.5) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 1100)
+						{
+							the_time = 1;
+							break;
+						}
 					}
 				}
-				for (i = 1;; i = i + 2)
+				for (int ii = 1;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 1100)
-					{
-						the_time = 1;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 1100)
+						{
+							the_time = 1;
+							break;
+						}
 					}
 				}
 			}
@@ -670,24 +677,29 @@ void Core::generate(int number,int mode,int result[][81]) {
 			{
 				for (i = 0; i < 81; i = i + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 1100)
-					{
-						the_time = 0;
-						continue;
+					if(rand()/(double)RAND_MAX<0.5) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 1100)
+						{
+							the_time = 0;
+							break;
+						}
 					}
 				}
-				for (i = 1;; i = i + 2)
+				for (int ii = 1;; ii = ii + 2)
 				{
-					result[sudoku_num][i] = 0;
-					num++;
-					free_degree += get_free_degree_plus(result[num], i);
-					if (num >= hollow_num || free_degree >= 1100)
-					{
-						the_time = 0;
-						continue;
+					int i = ii%81;
+					if(rand()/(double)RAND_MAX<0.5 && result[sudoku_num][i]!=0) {
+						result[sudoku_num][i] = 0;
+						num++;
+						free_degree += get_free_degree_plus(result[sudoku_num],i);
+						if(num >= hollow_num || free_degree >= 1100)
+						{
+							the_time = 0;
+							break;
+						}
 					}
 				}
 			}
@@ -711,7 +723,6 @@ bool Core::__generate_unique(int num, int maxNum, int index, int result[]) {
 void Core::generate(int number,int lower,int upper,bool unique,int result[][81]) {
 	if(unique) {
 		generate(number,result);
-		srand((unsigned int)time(0));
 #pragma omp parallel for
 		for(int n=0;n<number;++n) {
 			int num = lower;//rand()%(upper-lower+1)+lower;
@@ -719,7 +730,6 @@ void Core::generate(int number,int lower,int upper,bool unique,int result[][81])
 		}
 	} else {
 		generate(number,result);
-		srand((unsigned int)time(0));
 		for(int n=0;n<number;++n) {
 			int num = rand()%(upper-lower+1)+lower;
 			for(int i=0;i<81;++i) {
@@ -746,7 +756,6 @@ void Core::generate(int number,int result[][81]) {
 	int count = 0;
 	int tcount = 0;
 	int i = 0;
-	//printf("N=%d\n",N);
 	for(int n=0;n<number;++n) {
 		while(i<81) {
 			if(i<0) return;
@@ -783,8 +792,6 @@ void Core::generate(int number,int result[][81]) {
 		}
 		tcount+=count;
 		count = 0;
-		//if(n%10000==0)
-		//	printf("n=%d\n",n);
 		memcpy(result[n],__data,sizeof(int)*81);
 		int tr = (i-1)/9;
 		int tc = (i-1)%9;

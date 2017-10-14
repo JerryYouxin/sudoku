@@ -11,7 +11,6 @@ namespace UnitTest
 	public:
 		TEST_METHOD(TestRead)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			int refRes[]={
 				9, 0, 8, 0, 6, 0, 1, 2, 4,
@@ -42,7 +41,6 @@ namespace UnitTest
 		}
 		TEST_METHOD(TestWrite)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			int refRes[]={
 				9, 0, 8, 0, 6, 0, 1, 2, 4,
@@ -75,7 +73,6 @@ namespace UnitTest
 		// Generation
 		TEST_METHOD(TestGen10_3)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1000; // MAXIMUM
 			//int result[N][81];
@@ -88,7 +85,6 @@ namespace UnitTest
 
 		TEST_METHOD(TestGen1)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1; // MAXIMUM
 			int result[N][81];
@@ -99,7 +95,6 @@ namespace UnitTest
 
 		TEST_METHOD(TestGen3)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 3; // MAXIMUM
 			int result[N][81];
@@ -110,7 +105,6 @@ namespace UnitTest
 
 		TEST_METHOD(TestGen54203)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 54203; // MAXIMUM
 			int* result = new int[N*81];
@@ -123,7 +117,6 @@ namespace UnitTest
 		// Solver
 		TEST_METHOD(TestSolve20)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1; // MAXIMUM
 			int* result = new int[N*81];
@@ -140,7 +133,6 @@ namespace UnitTest
 		}
 		TEST_METHOD(TestSolve17_0)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 5; // MAXIMUM
 			int* result = new int[N*81];
@@ -155,7 +147,6 @@ namespace UnitTest
 		}
 		TEST_METHOD(TestSolve17_1)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 7; // MAXIMUM
 			//int result[N][81];
@@ -170,7 +161,6 @@ namespace UnitTest
 		}
 		TEST_METHOD(TestSolveExp)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 2; // MAXIMUM
 			int* result = new int[N*81];
@@ -186,7 +176,6 @@ namespace UnitTest
 
 		TEST_METHOD(TestSolveFail)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1; // MAXIMUM
 			int puzzle[] ={
@@ -206,7 +195,6 @@ namespace UnitTest
 
 		TEST_METHOD(TestGenRU10_3)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1000; // MAXIMUM
 								//int result[N][81];
@@ -219,12 +207,53 @@ namespace UnitTest
 
 		TEST_METHOD(TestGenR10_3)
 		{
-			// TODO: 在此输入测试代码
 			Core core;
 			const int N = 1000; // MAXIMUM
 								//int result[N][81];
 			int* result = new int[N*81];
 			core.generate(N,55,55,false,(int(*)[81])result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			delete[] result;
+		}
+
+		TEST_METHOD(TestGenModeEasy10_4)
+		{
+			Core core;
+			const int N = 10000; // MAXIMUM
+			int* result = new int[N*81];
+			core.generate(N,1,(int(*)[81])result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			core.solve(N,result,result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			delete[] result;
+		}
+
+		TEST_METHOD(TestGenModeNorm10_4)
+		{
+			Core core;
+			const int N = 10000; // MAXIMUM
+			int* result = new int[N*81];
+			core.generate(N,2,(int(*)[81])result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			core.solve(N,result,result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			delete[] result;
+		}
+
+		TEST_METHOD(TestGenModeHard10_4)
+		{
+			Core core;
+			const int N = 10000; // MAXIMUM
+			int* result = new int[N*81];
+			core.generate(N,3,(int(*)[81])result);
+			Assert::AreEqual(core.check_valid(N,(int*)result),0);
+			Assert::IsTrue(core.check_same(N,(int*)result));
+			core.solve(N,result,result);
 			Assert::AreEqual(core.check_valid(N,(int*)result),0);
 			Assert::IsTrue(core.check_same(N,(int*)result));
 			delete[] result;

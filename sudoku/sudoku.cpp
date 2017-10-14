@@ -128,7 +128,7 @@ Parser::Parser(int argc,char* argv[]) {
 				err = -2;
 				return;
 			}
-			if(mode!=EASY||mode!=NORM||mode!=HARD) {
+			if(mode!=EASY&&mode!=NORM&&mode!=HARD) {
 				printf("Error: Unknown mode input, valid mode choice: %d %d %d (from easy to hard)\n",EASY,NORM,HARD);
 				err = -3;
 				return;
