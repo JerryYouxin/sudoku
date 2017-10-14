@@ -11,7 +11,7 @@
 class Core
 {
 	public:
-	Core() { srand(time(0)); }
+	Core() { srand((unsigned int)time(0)); }
 	// sudoku generator
 	void generate(int number,int mode,int result[][81]);
 	void generate(int number,int lower,int upper,bool unique,int result[][81]);
