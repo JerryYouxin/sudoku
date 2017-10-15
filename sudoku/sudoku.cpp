@@ -6,6 +6,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "SudokuLib.h"
+#include <time.h>
 
 class Parser {
 	public:

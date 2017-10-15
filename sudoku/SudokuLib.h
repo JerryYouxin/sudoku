@@ -434,6 +434,7 @@ bool Core::check_valid(int *solution) {
 			int i = r*9+c;
 			int v = solution[i]-1;
 			if(solution[i]>9||solution[i]<0) return false;
+			if(solution[i]==0) continue;
 			if(empty_value[v][r][0]||empty_value[v][c][1]||empty_value[v][b][2]) {
 				return false;
 			}
@@ -449,7 +450,7 @@ int Core::check_valid(int number,int *solution) {
 	if(solution==0) return -1;
 	for(int i=0;i<number;++i) {
 		if(!check_valid(solution+i*81)) {
-			return i;
+			return i+1;
 		}
 	}
 	return 0;
@@ -815,7 +816,7 @@ void Core::generate(int number,int result[][81]) {
 	}
 }
 bool Core::solve(int puzzle[],int solution[]) {
-	if(check_valid(puzzle)!=0) throw InvalidSudokuException();
+	if(!check_valid(puzzle)) throw InvalidSudokuException();
 	return DLX_solve(puzzle,solution);
 	/* Naive solver
 	int fill[82]; // log if i-th grid should be filled in

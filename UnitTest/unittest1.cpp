@@ -264,7 +264,7 @@ namespace UnitTest
 			Core core;
 			const int N = 1; // MAXIMUM
 			int puzzle[] ={
-				9, 0, 8, 0, 6, 0, 1, 2, 4,
+				9, 9, 8, 0, 6, 0, 1, 2, 4,
 				2, 3, 7, 4, 5, 1, 9, 6, 8,
 				1, 4, 6, 0, 2, 0, 3, 5, 7,
 				0, 1, 2, 0, 7, 0, 5, 9, 3,
@@ -276,6 +276,8 @@ namespace UnitTest
 			};
 			int result[81]={ 0 };
 			try {
+				Assert::IsFalse(core.check_valid(puzzle));
+				Assert::AreEqual(core.check_valid(1,puzzle),1);
 				core.solve(puzzle,(int*)result);
 				Assert::Fail();
 			}
